@@ -1,0 +1,3 @@
+drive_node:
+  ros__parameters:
+    speed_motor: 255.0
