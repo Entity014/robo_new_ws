@@ -106,7 +106,7 @@ class StateSelector(Node):
         self.distance = 0
         self.distance_move = 0
         self.dis_arr = [0.80, 1.60, 2.40, 3.20]
-        self.dis_start = 0.0
+        self.dis_start = 0.2
         self.isFirst = True
         self.select_room = 0
         self.next_room = 0
