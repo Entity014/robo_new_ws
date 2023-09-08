@@ -86,6 +86,9 @@ class CommandRobo(Node):
     def sent_command_callback(self):  # publisher drive topic
         msg = Twist()
 
+        msg.angular.x = 29.0
+        msg.angular.y = 160.0
+        msg.angular.z = 20.0
         if self.state_overall == "RUNNING" and self.state_map == 4:
             if self.state_grib == 4:
                 if self.state_gribber == 0:
@@ -117,12 +120,8 @@ class CommandRobo(Node):
                         self.preTime = self.get_clock().now()
                 else:
                     self.state_gribber = 0
-            else:
-                msg.angular.x = 29.0
-                msg.angular.y = 160.0
-                msg.angular.z = 20.0
 
-        msg.linear.x = float(self.pwm_rotate)
+            msg.linear.x = float(self.pwm_rotate)
 
         self.sent_command.publish(msg)
 

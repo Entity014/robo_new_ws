@@ -177,12 +177,13 @@ class DetectionRobo(Node):
         msg = Int32MultiArray()
         if self.state_overall == "RUNNING" and self.state_map == 3:
             ret, frame = self.cap.read()
-            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-            frame = cv2.flip(frame, 2)
-            frame = cv2.flip(frame, 1)
-            frame = cv2.resize(frame, (self.width, self.height))
-            frame_copy = frame.copy()
-            self.scan_detection(frame_copy)
+            if ret == True:
+                frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+                frame = cv2.flip(frame, 2)
+                frame = cv2.flip(frame, 1)
+                frame = cv2.resize(frame, (self.width, self.height))
+                frame_copy = frame.copy()
+                self.scan_detection(frame_copy)
 
             if not self.isWarped:
                 warped = four_point_transform(
@@ -194,7 +195,7 @@ class DetectionRobo(Node):
             if self.isWarped:
                 self.matrix(5, 3, warped)
 
-            cv2.imshow("test", frame)
+            # cv2.imshow("test", frame)
             msg.data = self.room_arr.flatten().tolist()
             self.sent_mission_room.publish(msg)
 

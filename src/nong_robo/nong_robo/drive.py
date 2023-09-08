@@ -65,7 +65,7 @@ class DriveRobo(Node):
         self.declare_parameters("", [("speed_motor", None), ("path_auto", None)])
         self.speed = (
             self.get_parameter("speed_motor").get_parameter_value().double_value
-        ) / 255
+        )
 
         self.theta_sent = 0.0
         self.state_overall = ""
@@ -74,6 +74,7 @@ class DriveRobo(Node):
         self.heading = 0.0
         self.direct = ""
         self.motor_direct = 1
+        self.ultra = 0.0
 
     def sub_state_overall_callback(self, msg):
         self.state_overall = msg.data
@@ -86,6 +87,7 @@ class DriveRobo(Node):
 
     def sub_head_callback(self, msg):
         self.heading = msg.angular.x
+        self.ultra = msg.angular.y
 
     def sub_direct_callback(self, msg):
         self.direct = msg.data
@@ -111,16 +113,17 @@ class DriveRobo(Node):
         servoRight = 0.0
         theta_motor = 0
         theta_sevor = 0
+        motorSpeed = 0
 
         if self.state_overall == "RUNNING":
             if self.state_map == 1:
                 theta_motor = 0
                 theta_sevor = 0
-                motorSpeed = 100
+                motorSpeed = self.speed
             elif self.state_map == 2:
                 theta_motor = math.radians(90)
                 theta_sevor = math.radians(90)
-                motorSpeed = 100
+                motorSpeed = self.speed
             elif self.state_map == 3:
                 motorSpeed = 0
             elif self.state_map == 4:
@@ -131,17 +134,17 @@ class DriveRobo(Node):
                 if self.state_grib == 1:
                     theta_motor = 0
                     theta_sevor = 0
-                    motorSpeed = 100 * self.motor_direct
+                    motorSpeed = self.speed * self.motor_direct
                 elif self.state_grib == 2:
                     theta_motor = math.radians(90)
                     theta_sevor = math.radians(90)
-                    motorSpeed = 100
+                    motorSpeed = self.speed
                 elif self.state_grib == 3:
                     motorSpeed = 0
                 elif self.state_grib == 5:
                     theta_motor = math.radians(90)
                     theta_sevor = math.radians(90)
-                    motorSpeed = 100
+                    motorSpeed = self.speed
                 elif self.state_grib == 6:
                     motorSpeed = 0
         else:
@@ -154,6 +157,10 @@ class DriveRobo(Node):
         servoRight = thetaDiff(100.81446 * math.sin(abs(theta_sevor)) + 145.23)
         if abs(self.heading) >= 0.2 and (self.state_map == 1 or self.state_map == 4):
             servoRight += self.heading * 2.5
+            if self.ultra >= 20:
+                servoRight += 5
+            elif self.ultra <= 10:
+                servoRight += -5
         elif abs(self.heading) >= 0.2 and self.state_map == 2:
             servoFront += self.heading * 2
         motorFront = math.sin(theta_motor - math.pi / 4) * motorSpeed

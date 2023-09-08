@@ -92,7 +92,7 @@ class StateSelector(Node):
         )
         self.state_limit = 0.0
         self.state_sent = ""
-        self.state_map = 3
+        self.state_map = 0
         self.state_grib = 0
         self.state_gribber = 0
 
@@ -191,32 +191,32 @@ class StateSelector(Node):
 
     def sub_scan_callback(self, msg):
         ranges = msg.ranges
-        if self.state_sent != "Reset":
-            if (ranges[1380] <= 0.7 or ranges[1630] <= 0.7) and (
-                self.state_map == 0 or self.state_map == 1
-            ):
+        self.get_logger().info(f"{ranges[1550]}")
+        if self.state_sent != "Reset" or self.state_sent != "Idle":
+            if self.state_map == 0 and (ranges[960] <= 0.40 and ranges[1550] >= 1.5):
                 self.state_map = 1
-            elif (ranges[1400] >= 0.85 or ranges[1500] >= 0.75) and (
-                self.state_map == 1 or self.state_map == 2
-            ):
+            elif self.state_map == 1 and (ranges[1400] <= 0.5 and ranges[1550] <= 0.8):
                 self.state_map = 2
             elif (
-                len(self.room) != 5 and len(self.room) != 5 and len(self.room) != 5
-            ) and (self.state_map == 2 or self.state_map == 3):
+                len(self.room) == 5
+                and len(self.room) == 5
+                and len(self.room) == 5
+                and self.state_map == 2
+            ):
                 self.state_map = 3
             else:
                 self.state_map = 4
 
             if self.state_map == 4:
                 if len(self.mission) > 1:
-                    self.next_room = self.mission[0]
+                    self.next_room = self.mission[0][0]
                     if self.state_grib == 0:
                         if self.isFirst:
                             if len(self.number) - self.next_room != 0:
                                 self.distance = -(
                                     self.dis_start
                                     + self.dis_arr[
-                                        len(self.number) - self.next_room - 1
+                                        int(len(self.number) - self.next_room - 1)
                                     ]
                                 )
                             else:
@@ -226,12 +226,14 @@ class StateSelector(Node):
                         else:
                             if self.select_room > self.next_room:
                                 self.distance = -(
-                                    self.dis_arr[self.select_room - self.next_room - 1]
+                                    self.dis_arr[
+                                        int(self.select_room - self.next_room - 1)
+                                    ]
                                 )
                                 self.direct = "LEFT"
                             else:
                                 self.distance = self.dis_arr[
-                                    self.next_room - self.select_room - 1
+                                    int(self.next_room - self.select_room - 1)
                                 ]
                                 self.direct = "RIGHT"
 
@@ -246,7 +248,7 @@ class StateSelector(Node):
                 if self.ultra <= 5:
                     self.state_grib = 3
             elif self.state_grib == 3:
-                self.next_box = self.mission[1]
+                self.next_box = self.mission[0][1]
                 current = self.encode_value
                 if self.select_box < self.next_box:
                     if (
