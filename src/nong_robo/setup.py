@@ -26,6 +26,7 @@ setup(
             "drive_node = nong_robo.drive:main",
             "state_node = nong_robo.state_selector:main",
             "detection_node = nong_robo.detection:main",
+            "command_node = nong_robo.command:main",
         ],
     },
 )

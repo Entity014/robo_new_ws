@@ -31,12 +31,6 @@ def generate_launch_description():
     node_command = Node(
         package="nong_robo", executable="command_node", parameters=[config]
     )
-    node_rviz = Node(
-        package="imu_filter_madgwick",
-        executable="imu_filter_madgwick_node",
-        parameters=[{"use_mag": True}],
-        remappings=[("/imu/data_raw", "/imu/data_raw")],
-    )
     node_lidar = Node(
         package="sllidar_ros2",
         executable="sllidar_node",
@@ -54,17 +48,14 @@ def generate_launch_description():
         ],
         output="screen",
     )
-    node_pub_odom = Node(package="nong_robo", executable="pub_odom_node")
     node_state = Node(package="nong_robo", executable="state_node")
     node_detect = Node(package="nong_robo", executable="detection_node")
 
     ld.add_action(node_microros)
-    # ld.add_action(node_pub_odom)
     ld.add_action(node_drive)
-    # ld.add_action(node_command)
-    # ld.add_action(node_rviz)
     ld.add_action(node_lidar)
     ld.add_action(node_state)
     ld.add_action(node_detect)
+    ld.add_action(node_command)
 
     return ld

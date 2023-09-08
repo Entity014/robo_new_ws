@@ -5,7 +5,6 @@ import math
 from rclpy.node import Node
 from std_msgs.msg import Int32, String
 from geometry_msgs.msg import Twist, Vector3
-from robo_interfaces.msg import Dict
 from rclpy import qos
 
 
@@ -85,7 +84,6 @@ class CommandRobo(Node):
     def sent_command_callback(self):  # publisher drive topic
         msg = Twist()
 
-        msg.linear.x = 0
         if self.state_overall == "RUNNING" and self.state_map == 4:
             if self.state_grib == 4:
                 if self.state_gribber == 0:
@@ -107,7 +105,7 @@ class CommandRobo(Node):
                 msg.angular.y = 160.0
                 msg.angular.z = 20.0
 
-        msg.linear.x = self.pwm_rotate
+        msg.linear.x = float(self.pwm_rotate)
 
         self.sent_command.publish(msg)
 
