@@ -64,6 +64,8 @@ class CommandRobo(Node):
         self.set_new_setpoint = False
         self.setPID = False
 
+        self.preTime = self.get_clock().now()
+
     def sub_state_overall_callback(self, msg):
         self.state_overall = msg.data
 
@@ -90,14 +92,29 @@ class CommandRobo(Node):
                     msg.angular.x = 29.0
                     msg.angular.y = 75.0
                     msg.angular.z = 105.0
+                    if self.get_clock().now() - self.preTime >= rclpy.duration.Duration(
+                        seconds=1
+                    ):
+                        self.state_gribber = 1
+                        self.preTime = self.get_clock().now()
                 elif self.state_gribber == 1:
                     msg.angular.x = 150.0
                     msg.angular.y = 75.0
                     msg.angular.z = 105.0
+                    if self.get_clock().now() - self.preTime >= rclpy.duration.Duration(
+                        seconds=1
+                    ):
+                        self.state_gribber = 2
+                        self.preTime = self.get_clock().now()
                 elif self.state_gribber == 2:
                     msg.angular.x = 150.0
                     msg.angular.y = 160.0
                     msg.angular.z = 20.0
+                    if self.get_clock().now() - self.preTime >= rclpy.duration.Duration(
+                        seconds=1
+                    ):
+                        self.state_gribber = 3
+                        self.preTime = self.get_clock().now()
                 else:
                     self.state_gribber = 0
             else:
