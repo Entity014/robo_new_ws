@@ -50,7 +50,8 @@ class DetectionRobo(Node):
         self.sent_mission_room_timer = self.create_timer(
             0.05, self.sent_mission_number_callback
         )
-        self.cap = cv2.VideoCapture("/dev/video", cv2.CAP_V4L2)
+
+        self.cap = cv2.VideoCapture("/dev/video0", cv2.CAP_V4L2)
         self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"YUYV"))
         self.state_overall = ""
         self.state_map = 0
@@ -65,15 +66,20 @@ class DetectionRobo(Node):
         self.isWarped = False
         self.document_contour = []
 
-    def binaryList2Decimal(self, binary_list):
-        decimal_value = 0
-        power = len(binary_list) - 1
+    def binaryList2Decimal(self, binary_matrix):
+        decimal_values = []
 
-        for bit in binary_list:
-            decimal_value += bit * (2**power)
-            power -= 1
+        for binary_list in binary_matrix:
+            decimal_value = 0
+            power = len(binary_list) - 1
 
-        return decimal_value
+            for bit in binary_list:
+                decimal_value += bit * (2**power)
+                power -= 1
+
+            decimal_values.append(decimal_value)
+
+        return decimal_values
 
     def scan_detection(self, image):
         self.document_contour = np.array(
@@ -86,14 +92,14 @@ class DetectionRobo(Node):
         )
 
         contours, _ = cv2.findContours(
-            threshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            threshold, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE
         )
         contours = sorted(contours, key=cv2.contourArea, reverse=True)
 
         max_area = 0
         for contour in contours:
             area = cv2.contourArea(contour)
-            if area > 1000:
+            if area > 15000:
                 peri = cv2.arcLength(contour, True)
                 approx = cv2.approxPolyDP(contour, 0.015 * peri, True)
                 if area > max_area and len(approx) == 4:
@@ -107,13 +113,13 @@ class DetectionRobo(Node):
                 # cv2.rectangle(frame,(x + (i * int(WIDTH / 5)),y + (j * int(HEIGHT / 3))),(x + int(WIDTH / 5) + (i * int(WIDTH / 5)),y + int(HEIGHT / 3) + (j * int(HEIGHT / 3))),(255,0,0),2)
                 new = frame[
                     y
-                    + (j * int(self.height / 3)) : y
-                    + int(self.height / 3)
-                    + (j * int(self.height / 3)),
+                    + (j * int(self.height / Loop_y)) : y
+                    + int(self.height / Loop_y)
+                    + (j * int(self.height / Loop_y)),
                     x
-                    + (i * int(self.width / 5)) : x
-                    + int(self.width / 5)
-                    + (i * int(self.width / 5)),
+                    + (i * int(self.width / Loop_x)) : x
+                    + int(self.width / Loop_x)
+                    + (i * int(self.width / Loop_x)),
                 ]
                 if j == 0:
                     gray = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
@@ -134,7 +140,7 @@ class DetectionRobo(Node):
                                 self.binary_arr[j, 1] = 0
                             elif bx < new.shape[1]:
                                 self.binary_arr[j, 2] = 0
-                    self.room_arr[j, i] = self.binaryList2Decimal(self.binary_arr)
+                    self.room_arr[j] = self.binaryList2Decimal(self.binary_arr)
 
                 elif j == 1:
                     mask = cv2.inRange(new, self.lower_blue, self.upper_blue)
@@ -159,14 +165,6 @@ class DetectionRobo(Node):
                             else:
                                 self.shape_arr[j, i] = 10
 
-                else:
-                    gray_image = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
-                    custom_config = r"--oem 3 --psm 6 outputbase digits"
-                    extracted_text = pytesseract.image_to_string(
-                        gray_image, config=custom_config
-                    )
-                    self.number_arr[j, i] = extracted_text
-
     def sub_state_overall_callback(self, msg):
         self.state_overall = msg.data
 
@@ -182,6 +180,7 @@ class DetectionRobo(Node):
             frame = cv2.flip(frame, 1)
             frame = cv2.resize(frame, (self.width, self.height))
             frame_copy = frame.copy()
+            warped = np.zeros((480, 640, 3), dtype=np.uint8)
             self.scan_detection(frame_copy)
 
             if not self.isWarped:
@@ -199,8 +198,8 @@ class DetectionRobo(Node):
 
             if self.isWarped:
                 self.matrix(5, 3, warped)
+                # self.number_arr[0, i] = extracted_text
 
-            # cv2.imshow("test", frame)
             msg.data = self.room_arr.flatten().tolist()
             self.sent_mission_room.publish(msg)
 
