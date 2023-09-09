@@ -175,8 +175,14 @@ class DetectionRobo(Node):
 
     def sent_mission_room_callback(self):
         msg = Int32MultiArray()
+        ret, frame = self.cap.read()
+        if ret == True:
+            cv2.imshow("test", frame)
+        if ret != True:
+            self.cap.release()
+            cv2.destroyAllWindows()
+            exit()
         if self.state_overall == "RUNNING" and self.state_map == 3:
-            ret, frame = self.cap.read()
             if ret == True:
                 frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
                 frame = cv2.flip(frame, 2)
