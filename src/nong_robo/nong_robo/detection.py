@@ -50,11 +50,8 @@ class DetectionRobo(Node):
         self.sent_mission_room_timer = self.create_timer(
             0.05, self.sent_mission_number_callback
         )
-        self.cap = cv2.VideoCapture(
-            "v4l2src device=/dev/video1 ! video/x-raw,format=YUY2,width=1280,height=720,framerate=10/1 ! nvvidconv ! video/x-raw(memory:NVMM) ! nvvidconv ! video/x-raw, format=BGRx ! appsink drop=1",
-            cv2.CAP_GSTREAMER,
-        )
-
+        self.cap = cv2.VideoCapture("/dev/video", cv2.CAP_V4L2)
+        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"YUYV"))
         self.state_overall = ""
         self.state_map = 0
         self.room_arr = np.zeros((5, 1), dtype=int)
@@ -179,6 +176,7 @@ class DetectionRobo(Node):
     def sent_mission_room_callback(self):
         msg = Int32MultiArray()
         _, frame = self.cap.read()
+        print(frame)
         if self.state_overall == "RUNNING" and self.state_map == 3:
             frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
             frame = cv2.flip(frame, 2)
