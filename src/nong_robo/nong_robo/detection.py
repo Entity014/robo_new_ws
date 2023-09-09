@@ -50,14 +50,10 @@ class DetectionRobo(Node):
         self.sent_mission_room_timer = self.create_timer(
             0.05, self.sent_mission_number_callback
         )
-        pipeline = (
-            "v4l2src device=/dev/video0 ! "
-            "video/x-raw, width=640, height=480, format=(string)YUY2 ! "
-            "videoconvert ! "
-            "appsink sync=false"
+        self.cap = cv2.VideoCapture(
+            "v4l2src device=/dev/video1 ! video/x-raw,format=YUY2,width=1280,height=720,framerate=10/1 ! nvvidconv ! video/x-raw(memory:NVMM) ! nvvidconv ! video/x-raw, format=BGRx ! appsink drop=1",
+            cv2.CAP_GSTREAMER,
         )
-
-        self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
 
         self.state_overall = ""
         self.state_map = 0
