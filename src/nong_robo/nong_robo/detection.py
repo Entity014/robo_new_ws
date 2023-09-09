@@ -4,6 +4,7 @@ import math
 import time
 import cv2
 import pytesseract
+import nanocamera as nano
 
 from rclpy.node import Node
 from std_msgs.msg import Int32MultiArray, String, String, Int32
@@ -50,7 +51,10 @@ class DetectionRobo(Node):
         self.sent_mission_room_timer = self.create_timer(
             0.05, self.sent_mission_number_callback
         )
-        self.cap = cv2.VideoCapture(0)
+        # self.cap = cv2.VideoCapture(0)
+        self.cap = nano.Camera(
+            camera_type=1, device_id=1, width=640, height=480, fps=30
+        )
 
         self.state_overall = ""
         self.state_map = 0
@@ -175,40 +179,30 @@ class DetectionRobo(Node):
 
     def sent_mission_room_callback(self):
         msg = Int32MultiArray()
-        ret, frame = self.cap.read()
-        if ret == True:
-            cv2.imshow("test", frame)
-        if ret != True:
-            self.cap.release()
-            cv2.destroyAllWindows()
-            exit()
+        # _, frame = self.cap.read()
+        frame = self.cap.read()
+        cv2.imshow("test", frame)
         if self.state_overall == "RUNNING" and self.state_map == 3:
-            if ret == True:
-                frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-                frame = cv2.flip(frame, 2)
-                frame = cv2.flip(frame, 1)
-                frame = cv2.resize(frame, (self.width, self.height))
-                frame_copy = frame.copy()
-                self.scan_detection(frame_copy)
+            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+            frame = cv2.flip(frame, 2)
+            frame = cv2.flip(frame, 1)
+            frame = cv2.resize(frame, (self.width, self.height))
+            frame_copy = frame.copy()
+            self.scan_detection(frame_copy)
 
-                if not self.isWarped:
-                    warped = four_point_transform(
-                        frame_copy, self.document_contour.reshape(4, 2)
-                    )
-                    warped = cv2.resize(warped, (self.width, self.height))
-                    isWarped = True
+            if not self.isWarped:
+                warped = four_point_transform(
+                    frame_copy, self.document_contour.reshape(4, 2)
+                )
+                warped = cv2.resize(warped, (self.width, self.height))
+                isWarped = True
 
-                if self.isWarped:
-                    self.matrix(5, 3, warped)
+            if self.isWarped:
+                self.matrix(5, 3, warped)
 
-                # cv2.imshow("test", frame)
-                msg.data = self.room_arr.flatten().tolist()
-                self.sent_mission_room.publish(msg)
-
-            if ret != True:
-                self.cap.release()
-                cv2.destroyAllWindows()
-                exit()
+            # cv2.imshow("test", frame)
+            msg.data = self.room_arr.flatten().tolist()
+            self.sent_mission_room.publish(msg)
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 self.cap.release()
