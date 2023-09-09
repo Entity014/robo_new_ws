@@ -184,7 +184,7 @@ class StateSelector(Node):
             self.state_sent = "Running"
         elif self.state_limit == 2:
             self.state_sent = "Reset"
-            self.state_map = 3
+            self.state_map = 0
             self.state_grib = 0
         else:
             self.state_sent = "Idle"
