@@ -59,8 +59,8 @@ class DetectionRobo(Node):
         self.shape_arr = np.zeros((5, 1), dtype=int)
         self.number_arr = np.zeros((5, 1), dtype=int)
         self.width, self.height = 720, 600
-        self.lower_blue = np.array([93, 50, 16])
-        self.upper_blue = np.array([179, 113, 85])
+        self.lower_blue = np.array([139, 80, 0])
+        self.upper_blue = np.array([179, 151, 50])
 
         self.isWarped = False
         self.document_contour = []
@@ -82,7 +82,7 @@ class DetectionRobo(Node):
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         threshold = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
+            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 85, 6
         )
 
         contours, _ = cv2.findContours(
@@ -189,7 +189,13 @@ class DetectionRobo(Node):
                     frame_copy, self.document_contour.reshape(4, 2)
                 )
                 warped = cv2.resize(warped, (self.width, self.height))
-                isWarped = True
+                if self.document_contour.tolist() != [
+                    [0, 0],
+                    [self.width, 0],
+                    [self.width, self.height],
+                    [0, self.height],
+                ]:
+                    self.isWarped = True
 
             if self.isWarped:
                 self.matrix(5, 3, warped)

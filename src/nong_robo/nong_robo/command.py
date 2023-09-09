@@ -118,6 +118,15 @@ class CommandRobo(Node):
                     ):
                         self.state_gribber = 3
                         self.preTime = self.get_clock().now()
+                elif self.state_gribber == 3:
+                    msg.angular.x = 29.0
+                    msg.angular.y = 160.0
+                    msg.angular.z = 20.0
+                    if self.get_clock().now() - self.preTime >= rclpy.duration.Duration(
+                        seconds=1
+                    ):
+                        self.state_gribber = 4
+                        self.preTime = self.get_clock().now()
                 else:
                     self.state_gribber = 0
 

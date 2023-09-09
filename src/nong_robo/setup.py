@@ -28,6 +28,7 @@ setup(
             "detection_node = nong_robo.detection:main",
             "command_node = nong_robo.command:main",
             "mission_node = nong_robo.testMission:main",
+            "test_grib_node = nong_robo.testGrib:main",
         ],
     },
 )

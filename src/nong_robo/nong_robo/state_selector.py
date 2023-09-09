@@ -308,7 +308,7 @@ class StateSelector(Node):
                     self.state_grib = 4
                 self.lastTime = self.get_clock().now().to_msg().sec
             elif self.state_grib == 4:
-                if self.state_gribber == 2:
+                if self.state_gribber == 3:
                     self.state_grib == 5
             elif self.state_grib == 5:
                 if self.ultra >= 50:
