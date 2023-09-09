@@ -185,19 +185,19 @@ class DetectionRobo(Node):
                 frame_copy = frame.copy()
                 self.scan_detection(frame_copy)
 
-            if not self.isWarped:
-                warped = four_point_transform(
-                    frame_copy, self.document_contour.reshape(4, 2)
-                )
-                warped = cv2.resize(warped, (self.width, self.height))
-                isWarped = True
+                if not self.isWarped:
+                    warped = four_point_transform(
+                        frame_copy, self.document_contour.reshape(4, 2)
+                    )
+                    warped = cv2.resize(warped, (self.width, self.height))
+                    isWarped = True
 
-            if self.isWarped:
-                self.matrix(5, 3, warped)
+                if self.isWarped:
+                    self.matrix(5, 3, warped)
 
-            # cv2.imshow("test", frame)
-            msg.data = self.room_arr.flatten().tolist()
-            self.sent_mission_room.publish(msg)
+                # cv2.imshow("test", frame)
+                msg.data = self.room_arr.flatten().tolist()
+                self.sent_mission_room.publish(msg)
 
             if ret != True:
                 self.cap.release()

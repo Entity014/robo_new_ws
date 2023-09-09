@@ -184,21 +184,20 @@ class StateSelector(Node):
             self.state_sent = "Running"
         elif self.state_limit == 2:
             self.state_sent = "Reset"
-            self.state_map = 0
+            self.state_map = 3
             self.state_grib = 0
         else:
             self.state_sent = "Idle"
 
     def sub_scan_callback(self, msg):
         ranges = msg.ranges
-        self.get_logger().info(f"{ranges[960]}")
         if self.state_sent != "Reset" or self.state_sent != "Idle":
             if (self.state_map == 0 or self.state_map == 1) and not (
-                ranges[960] <= 0.50 and ranges[1550] >= 2.0
+                ranges[960] <= 0.75 and ranges[1550] >= 2.0
             ):
                 self.state_map = 1
             elif (self.state_map == 1 or self.state_map == 2) and not (
-                ranges[1400] <= 1.2 and ranges[1550] <= 1.2
+                ranges[1400] <= 1.1 and ranges[1550] <= 1.1
             ):
                 self.state_map = 2
             elif not (

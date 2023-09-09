@@ -148,6 +148,8 @@ class DriveRobo(Node):
                 elif self.state_grib == 6:
                     motorSpeed = 0
         else:
+            theta_motor = 0
+            theta_sevor = 0
             motorSpeed = 0
             self.isFirst = True
 
