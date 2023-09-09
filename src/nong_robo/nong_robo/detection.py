@@ -4,7 +4,6 @@ import math
 import time
 import cv2
 import pytesseract
-import nanocamera as nano
 
 from rclpy.node import Node
 from std_msgs.msg import Int32MultiArray, String, String, Int32
@@ -51,10 +50,17 @@ class DetectionRobo(Node):
         self.sent_mission_room_timer = self.create_timer(
             0.05, self.sent_mission_number_callback
         )
-        # self.cap = cv2.VideoCapture(0)
-        self.cap = nano.Camera(
-            camera_type=1, device_id=1, width=640, height=480, fps=30
+        gs_pipeline = (
+            f"v4l2src device=/dev/video0 io-mode=2 "
+            f"! image/jpeg, width=720, height=600, framerate=30/1, format=MJPG "
+            f"! nvv4l2decoder mjpeg=1 "
+            f"! nvvidconv "
+            f"! video/x-raw, format=BGRx "
+            f"! videoconvert "
+            f"! video/x-raw, format=BGR "
+            f"! appsink drop=1"
         )
+        self.cap = cv2.VideoCapture(gs_pipeline, cv2.CAP_GSTREAMER)
 
         self.state_overall = ""
         self.state_map = 0
@@ -179,9 +185,7 @@ class DetectionRobo(Node):
 
     def sent_mission_room_callback(self):
         msg = Int32MultiArray()
-        # _, frame = self.cap.read()
-        frame = self.cap.read()
-        cv2.imshow("test", frame)
+        _, frame = self.cap.read()
         if self.state_overall == "RUNNING" and self.state_map == 3:
             frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
             frame = cv2.flip(frame, 2)
