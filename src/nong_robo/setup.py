@@ -27,6 +27,7 @@ setup(
             "state_node = nong_robo.state_selector:main",
             "detection_node = nong_robo.detection:main",
             "command_node = nong_robo.command:main",
+            "mission_node = nong_robo.testMission:main",
         ],
     },
 )
