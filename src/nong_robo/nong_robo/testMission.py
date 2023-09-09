@@ -176,33 +176,28 @@ class DetectionRobo(Node):
     def sent_mission_room_callback(self):
         msg = Int32MultiArray()
         _, frame = self.cap.read()
-        if self.state_overall == "RUNNING" and self.state_map == 3:
-            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-            frame = cv2.flip(frame, 2)
-            frame = cv2.flip(frame, 1)
-            frame = cv2.resize(frame, (self.width, self.height))
-            frame_copy = frame.copy()
-            self.scan_detection(frame_copy)
+        frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+        frame = cv2.flip(frame, 2)
+        frame = cv2.flip(frame, 1)
+        frame = cv2.resize(frame, (self.width, self.height))
+        frame_copy = frame.copy()
+        self.scan_detection(frame_copy)
 
-            if not self.isWarped:
-                warped = four_point_transform(
-                    frame_copy, self.document_contour.reshape(4, 2)
-                )
-                warped = cv2.resize(warped, (self.width, self.height))
-                isWarped = True
+        if not self.isWarped:
+            warped = four_point_transform(
+                frame_copy, self.document_contour.reshape(4, 2)
+            )
+            warped = cv2.resize(warped, (self.width, self.height))
+            isWarped = True
 
-            if self.isWarped:
-                self.matrix(5, 3, warped)
+        if self.isWarped:
+            self.matrix(5, 3, warped)
 
-            # cv2.imshow("test", frame)
-            msg.data = self.room_arr.flatten().tolist()
-            self.sent_mission_room.publish(msg)
+        # cv2.imshow("test", frame)
+        msg.data = self.room_arr.flatten().tolist()
+        self.sent_mission_room.publish(msg)
 
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                self.cap.release()
-                cv2.destroyAllWindows()
-                exit()
-        elif self.state_map == 4:
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             self.cap.release()
             cv2.destroyAllWindows()
             exit()
