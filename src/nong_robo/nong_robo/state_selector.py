@@ -184,7 +184,7 @@ class StateSelector(Node):
         ranges = msg.ranges
         if self.state_sent != "Reset" or self.state_sent != "Idle":
             if (self.state_map == 0 or self.state_map == 1) and not (
-                ranges[960] <= 0.75 and ranges[1550] >= 2.0
+                ranges[960] <= 0.50 and ranges[1550] >= 2.0
             ):
                 self.state_map = 1
             elif (self.state_map == 1 or self.state_map == 2) and not (

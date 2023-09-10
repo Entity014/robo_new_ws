@@ -74,7 +74,7 @@ class DetectionRobo(Node):
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         threshold = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 85, 6
+            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 85, 6
         )
 
         contours, _ = cv2.findContours(
@@ -100,6 +100,7 @@ class DetectionRobo(Node):
                 # cv2.rectangle(frame,(x + (i * int(WIDTH / 5)),y + (j * int(HEIGHT / 3))),(x + int(WIDTH / 5) + (i * int(WIDTH / 5)),y + int(HEIGHT / 3) + (j * int(HEIGHT / 3))),(255,0,0),2)
                 new = frame[
                     y
+                    + 50
                     + (j * int(self.height / Loop_y)) : y
                     + int(self.height / Loop_y)
                     + (j * int(self.height / Loop_y)),
@@ -110,7 +111,7 @@ class DetectionRobo(Node):
                 ]
                 if j == 0:
                     gray = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
-                    _, threshold = cv2.threshold(gray, 70, 255, cv2.THRESH_BINARY_INV)
+                    _, threshold = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV)
                     contours, _ = cv2.findContours(
                         threshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE
                     )
@@ -127,8 +128,10 @@ class DetectionRobo(Node):
                                 self.binary_arr[i, 1] = 0
                             elif bx < new.shape[1]:
                                 self.binary_arr[i, 2] = 0
+                            self.get_logger().info(f"{i} {bx} {bx+bw}")
 
-                    self.room_arr = np.array(self.binaryList2Decimal(self.binary_arr))
+                    cv2.imshow(f"{i} {j}", threshold)
+                    # self.room_arr = np.array(self.binaryList2Decimal(self.binary_arr))
 
                 elif j == 1:
                     mask = cv2.inRange(new, self.lower_blue, self.upper_blue)
