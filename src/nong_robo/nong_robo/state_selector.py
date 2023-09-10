@@ -120,31 +120,21 @@ class StateSelector(Node):
         self.setpoint = 0
         self.setpoint_adder = 0
         self.lastTime = self.get_clock().now().to_msg().sec
-        self.Integral = 0
+        self.integral = 0
         self.lastError = 0
 
         self.set_new_setpoint = False
         self.sent_value_rotate = 0
 
-    def PID(self, Kp, Ki, Kd, min_power, setpoint, current):
-        currentTime = self.get_clock().now().to_msg().sec
-        if (currentTime - self.lastTime) == 0:
-            deltha_time = 1e-2
-        else:
-            deltha_time = currentTime - self.lastTime
-        error_value = setpoint - current
-        self.Integral += error_value * deltha_time
-        if abs(self.Integral) >= 255:
-            self.Integral = 255 * (self.Integral / abs(self.Integral))
-        Derivative = (error_value - self.lastError) / deltha_time
-        self.lastError = error_value
-        # self.get_logger().info(f"{self.Integral}, {setpoint} {current}")
-        return (
-            (error_value * Kp)
-            + (self.Integral * Ki)
-            + (Derivative * Kd)
-            + (min_power * error_value / abs(error_value))
-        )
+    def PID(self, Kp, Ki, Kd, setpoint, current):
+        error = setpoint - current
+        self.integral += error
+        derivative = error - self.lastError
+
+        control_output = (Kp * error) + (Ki * self.integral) + (Kd * derivative)
+
+        self.prev_error = error
+        return control_output
 
     def sub_room_callback(self, msg):
         self.room = msg.data
@@ -263,23 +253,22 @@ class StateSelector(Node):
 
                 self.select_box = self.next_box
 
-                if not (self.setpoint - 5 < current and self.setpoint + 5 > current):
-                    self.Integral = 0
+                if not (self.setpoint - 80 < current and self.setpoint + 80 > current):
+                    self.integral = 0
                     self.lastError = 0
                     value = self.PID(
-                        0.01,  # 0.13
-                        0.0,  # 0.13
+                        1e-15,
                         0,
-                        0,
+                        1000,
                         self.setpoint,
                         current,
                     )
-                    if abs(value) >= 255:
-                        value = 255.0 * value / abs(value)
+                    if abs(value) >= 100:
+                        value = 100.0 * value / abs(value)
 
-                    self.sent_value_rotate = -1 * value
+                    self.sent_value_rotate = float(-1 * value)
                 else:
-                    self.sent_value_rotate = 0
+                    self.sent_value_rotate = 0.0
                     self.state_grib = 4
                 self.lastTime = self.get_clock().now().to_msg().sec
             elif self.state_grib == 4:

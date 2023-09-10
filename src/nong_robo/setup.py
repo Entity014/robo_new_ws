@@ -29,6 +29,7 @@ setup(
             "command_node = nong_robo.command:main",
             "mission_node = nong_robo.testMission:main",
             "test_grib_node = nong_robo.testGrib:main",
+            "pid_node = nong_robo.tunePID:main",
         ],
     },
 )
