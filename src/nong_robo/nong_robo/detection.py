@@ -3,7 +3,6 @@ import numpy as np
 import math
 import time
 import cv2
-import pytesseract
 
 from rclpy.node import Node
 from std_msgs.msg import Int32MultiArray, String, String, Int32
@@ -62,6 +61,8 @@ class DetectionRobo(Node):
         self.width, self.height = 720, 600
         self.lower_blue = np.array([139, 80, 0])
         self.upper_blue = np.array([179, 151, 50])
+
+        self.warped = np.zeros((480, 640, 3), dtype=np.uint8)
 
         self.isWarped = False
         self.document_contour = []
@@ -135,12 +136,12 @@ class DetectionRobo(Node):
                         bx, by, bw, bh = cv2.boundingRect(contour)
                         if area > 800:
                             if bx < new.shape[1] / 3.25:
-                                self.binary_arr[j, 0] = 0
+                                self.binary_arr[i, 0] = 0
                             elif bx < 2 * new.shape[1] / 3.25:
-                                self.binary_arr[j, 1] = 0
+                                self.binary_arr[i, 1] = 0
                             elif bx < new.shape[1]:
-                                self.binary_arr[j, 2] = 0
-                    self.room_arr[j] = self.binaryList2Decimal(self.binary_arr)
+                                self.binary_arr[i, 2] = 0
+                    self.room_arr = np.array(self.binaryList2Decimal(self.binary_arr))
 
                 elif j == 1:
                     mask = cv2.inRange(new, self.lower_blue, self.upper_blue)
@@ -155,15 +156,15 @@ class DetectionRobo(Node):
                         )
                         if area >= 120:
                             if len(approx) == 3:
-                                self.shape_arr[j, i] = 3
+                                self.shape_arr[i, 0] = 3
                             elif len(approx) == 4:
-                                self.shape_arr[j, i] = 4
+                                self.shape_arr[i, 0] = 4
                             elif len(approx) >= 5 and len(approx) <= 7:
-                                self.shape_arr[j, i] = 5
+                                self.shape_arr[i, 0] = 5
                             elif len(approx) > 7 and len(approx) < 9:
-                                self.shape_arr[j, i] = 8
+                                self.shape_arr[i, 0] = 8
                             else:
-                                self.shape_arr[j, i] = 10
+                                self.shape_arr[i, 0] = 10
 
     def sub_state_overall_callback(self, msg):
         self.state_overall = msg.data

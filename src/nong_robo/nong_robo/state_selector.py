@@ -97,9 +97,9 @@ class StateSelector(Node):
         self.state_gribber = 0
 
         self.pos_x = 0
-        self.mission = np.zeros((5, 3))
-        self.room = []
-        self.shape = []
+        self.mission = np.zeros((5, 2), dtype=int)
+        self.room = np.zeros((5, 1), dtype=int)
+        self.shape = np.zeros((5, 1), dtype=int)
         self.number = []
 
         self.direct = ""
@@ -151,26 +151,27 @@ class StateSelector(Node):
 
     def sub_shape_callback(self, msg):
         self.shape = msg.data
-        for i in self.shape:
-            if i == 3:
-                self.shape[i] = 1
-            elif i == 4:
-                self.shape[i] = 2
-            elif i == 5:
-                self.shape[i] = 3
-            elif i == 8:
-                self.shape[i] = 4
-            elif i == 10:
-                self.shape[i] = 0
+        shape_np = np.array(self.shape)
+        count = np.count_nonzero(shape_np == 0)
+        if count != 5:
+            for i, v in enumerate(self.shape):
+                if v == 3:
+                    self.shape[i] = 1
+                elif v == 4:
+                    self.shape[i] = 2
+                elif v == 5:
+                    self.shape[i] = 3
+                elif v == 8:
+                    self.shape[i] = 4
+                elif v == 10:
+                    self.shape[i] = 0
+            self.mission[:, 0] = self.room
+            self.mission[:, 1] = self.shape
+            sorted_indices = np.argsort(self.mission[:, 0])[::-1]
+            self.mission = self.mission[sorted_indices]
 
     def sub_number_callback(self, msg):
         self.number = msg.data
-
-        for i in range(len(self.number)):
-            self.mission[i] = [self.room[i], self.shape[i], self.number[i]]
-
-        sorted_indices = np.argsort(self.mission[:, 3])
-        self.mission = self.mission[sorted_indices]
 
     def sub_motor_callback(self, msg):
         self.pos_x = msg.linear.x
@@ -208,42 +209,16 @@ class StateSelector(Node):
                 self.state_map = 4
 
             if self.state_map == 4:
-                if len(self.mission) > 1:
-                    self.next_room = self.mission[0][0]
-                    if self.state_grib == 0:
-                        if self.isFirst:
-                            if len(self.number) - self.next_room != 0:
-                                self.distance = -(
-                                    self.dis_start
-                                    + self.dis_arr[
-                                        int(len(self.number) - self.next_room - 1)
-                                    ]
-                                )
-                            else:
-                                self.distance = -self.dis_start
-                            self.direct = "LEFT"
-                            self.isFirst = False
-                        else:
-                            if self.select_room > self.next_room:
-                                self.distance = -(
-                                    self.dis_arr[
-                                        int(self.select_room - self.next_room - 1)
-                                    ]
-                                )
-                                self.direct = "LEFT"
-                            else:
-                                self.distance = self.dis_arr[
-                                    int(self.next_room - self.select_room - 1)
-                                ]
-                                self.direct = "RIGHT"
-
-                        self.distance_move = self.distance + self.pos_x
-                        self.state_grib == 1
+                if len(self.mission) == 5:
+                    self.state_grib == 1
 
             if self.state_grib == 1:
-                if self.pos_x - self.distance_move <= 0:
-                    self.state_grib = 2
-                    self.select_room = self.next_room
+                if self.isFirst:
+                    if ranges[960] - 0.6 <= 0:
+                        self.state_grib = 2
+                else:
+                    if ranges[960] - 0.8 <= 0:
+                        self.state_grib = 2
             elif self.state_grib == 2:
                 if self.ultra <= 5:
                     self.state_grib = 3

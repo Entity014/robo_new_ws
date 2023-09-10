@@ -27,7 +27,7 @@ class CommandRobo(Node):
             msg.angular.y = 75.0
             msg.angular.z = 105.0
             if self.get_clock().now() - self.preTime >= rclpy.duration.Duration(
-                seconds=1
+                seconds=3
             ):
                 self.state_gribber = 1
                 self.preTime = self.get_clock().now()
@@ -36,7 +36,7 @@ class CommandRobo(Node):
             msg.angular.y = 75.0
             msg.angular.z = 105.0
             if self.get_clock().now() - self.preTime >= rclpy.duration.Duration(
-                seconds=1
+                seconds=3
             ):
                 self.state_gribber = 2
                 self.preTime = self.get_clock().now()
@@ -45,7 +45,7 @@ class CommandRobo(Node):
             msg.angular.y = 160.0
             msg.angular.z = 20.0
             if self.get_clock().now() - self.preTime >= rclpy.duration.Duration(
-                seconds=1
+                seconds=3
             ):
                 self.state_gribber = 3
                 self.preTime = self.get_clock().now()
@@ -54,12 +54,13 @@ class CommandRobo(Node):
             msg.angular.y = 160.0
             msg.angular.z = 20.0
             if self.get_clock().now() - self.preTime >= rclpy.duration.Duration(
-                seconds=1
+                seconds=3
             ):
                 self.state_gribber = 4
                 self.preTime = self.get_clock().now()
         else:
             self.state_gribber = 0
+        msg.linear.x = 100.0
 
         self.sent_command.publish(msg)
 

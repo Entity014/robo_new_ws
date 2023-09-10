@@ -3,7 +3,6 @@ import numpy as np
 import math
 import time
 import cv2
-import pytesseract
 
 from rclpy.node import Node
 from std_msgs.msg import Int32MultiArray, String, String, Int32
@@ -44,9 +43,12 @@ class DetectionRobo(Node):
         self.shape_arr = np.zeros((5, 1), dtype=int)
         self.number_arr = np.zeros((5, 1), dtype=int)
         self.width, self.height = 720, 600
-        self.lower_blue = np.array([139, 80, 0])
-        self.upper_blue = np.array([179, 151, 50])
+        self.lower_blue = np.array([0, 0, 0])
+        self.upper_blue = np.array([179, 255, 144])
 
+        self.warped = np.zeros((480, 640, 3), dtype=np.uint8)
+
+        self.isSendShape = False
         self.isWarped = False
         self.document_contour = []
 
@@ -72,7 +74,7 @@ class DetectionRobo(Node):
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         threshold = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 85, 6
+            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 85, 6
         )
 
         contours, _ = cv2.findContours(
@@ -89,6 +91,7 @@ class DetectionRobo(Node):
                 if area > max_area and len(approx) == 4:
                     self.document_contour = approx
                     max_area = area
+        cv2.imshow("test2", threshold)
 
     def matrix(self, Loop_x, Loop_y, frame):
         x, y = 0, 0
@@ -119,13 +122,13 @@ class DetectionRobo(Node):
                         bx, by, bw, bh = cv2.boundingRect(contour)
                         if area > 800:
                             if bx < new.shape[1] / 3.25:
-                                self.binary_arr[j, 0] = 0
+                                self.binary_arr[i, 0] = 0
                             elif bx < 2 * new.shape[1] / 3.25:
-                                self.binary_arr[j, 1] = 0
+                                self.binary_arr[i, 1] = 0
                             elif bx < new.shape[1]:
-                                self.binary_arr[j, 2] = 0
-                    value = self.binaryList2Decimal(self.binary_arr)
-                    self.room_arr[j] = value[i]
+                                self.binary_arr[i, 2] = 0
+
+                    self.room_arr = np.array(self.binaryList2Decimal(self.binary_arr))
 
                 elif j == 1:
                     mask = cv2.inRange(new, self.lower_blue, self.upper_blue)
@@ -140,22 +143,15 @@ class DetectionRobo(Node):
                         )
                         if area >= 120:
                             if len(approx) == 3:
-                                self.shape_arr[j, i] = 3
+                                self.shape_arr[i, 0] = 3
                             elif len(approx) == 4:
-                                self.shape_arr[j, i] = 4
+                                self.shape_arr[i, 0] = 4
                             elif len(approx) >= 5 and len(approx) <= 7:
-                                self.shape_arr[j, i] = 5
+                                self.shape_arr[i, 0] = 5
                             elif len(approx) > 7 and len(approx) < 9:
-                                self.shape_arr[j, i] = 8
+                                self.shape_arr[i, 0] = 8
                             else:
-                                self.shape_arr[j, i] = 10
-                # else:
-                #     gray_image = cv2.cvtColor(new, cv2.COLOR_BGR2GRAY)
-                #     custom_config = r"--oem 3 --psm 6 outputbase digits"
-                #     extracted_text = pytesseract.image_to_string(
-                #         gray_image, config=custom_config
-                #     )
-                # self.get_logger().info(f"{extracted_text}")
+                                self.shape_arr[i, 0] = 10
 
     def sent_mission_room_callback(self):
         msg = Int32MultiArray()
@@ -165,26 +161,26 @@ class DetectionRobo(Node):
         frame = cv2.flip(frame, 1)
         frame = cv2.resize(frame, (self.width, self.height))
         frame_copy = frame.copy()
-        warped = np.zeros((480, 640, 3), dtype=np.uint8)
+
         self.scan_detection(frame_copy)
 
         if not self.isWarped:
-            warped = four_point_transform(
+            self.warped = four_point_transform(
                 frame_copy, self.document_contour.reshape(4, 2)
             )
-            warped = cv2.resize(warped, (self.width, self.height))
+            self.warped = cv2.resize(self.warped, (self.width, self.height))
             if self.document_contour.tolist() != [
                 [0, 0],
                 [self.width, 0],
                 [self.width, self.height],
                 [0, self.height],
             ]:
-                cv2.imshow("test", warped)
+                cv2.imshow("test", self.warped)
                 self.isWarped = True
 
         if self.isWarped:
-            self.matrix(5, 3, warped)
-            # self.number_arr[0, i] = extracted_text
+            self.matrix(5, 3, self.warped)
+            cv2.imshow("test3", self.warped)
 
         cv2.imshow("test", frame)
         msg.data = self.room_arr.flatten().tolist()
@@ -197,15 +193,13 @@ class DetectionRobo(Node):
 
     def sent_mission_shape_callback(self):
         msg = Int32MultiArray()
-        if self.state_overall == "RUNNING" and self.state_map == 3:
-            msg.data = self.shape_arr.flatten().tolist()
-            self.sent_mission_shape.publish(msg)
+        msg.data = self.shape_arr.flatten().tolist()
+        self.sent_mission_shape.publish(msg)
 
     def sent_mission_number_callback(self):
         msg = Int32MultiArray()
-        if self.state_overall == "RUNNING" and self.state_map == 3:
-            msg.data = self.number_arr.flatten().tolist()
-            self.sent_mission_shape.publish(msg)
+        msg.data = self.number_arr.flatten().tolist()
+        self.sent_mission_shape.publish(msg)
 
 
 def main():
