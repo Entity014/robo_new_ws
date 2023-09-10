@@ -191,7 +191,7 @@ class StateSelector(Node):
                 ranges[1400] <= 1.1 and ranges[1550] <= 1.1
             ):
                 self.state_map = 2
-            elif not (len(self.room) == 5 and len(self.shape) == 5) and (
+            elif not (np.count_nonzero(self.room == 0) != 5) and (
                 self.state_map == 2 or self.state_map == 3
             ):
                 self.state_map = 3
