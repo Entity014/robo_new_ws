@@ -93,7 +93,7 @@ class StateSelector(Node):
         self.state_limit = 0.0
         self.state_sent = ""
         self.state_map = 0
-        self.state_grib = 0
+        self.state_grib = 1
         self.state_gribber = 0
 
         self.pos_x = 0
@@ -184,102 +184,103 @@ class StateSelector(Node):
         ranges = msg.ranges
         if self.state_sent != "Reset" or self.state_sent != "Idle":
             if (self.state_map == 0 or self.state_map == 1) and not (
-                ranges[960] <= 0.50 and ranges[1550] >= 2.0
+                ranges[960] <= 0.70 and ranges[1550] >= 1.0
             ):
                 self.state_map = 1
             elif (self.state_map == 1 or self.state_map == 2) and not (
                 ranges[1400] <= 1.1 and ranges[1550] <= 1.1
             ):
                 self.state_map = 2
-            elif not (
-                len(self.room) == 5 and len(self.room) == 5 and len(self.room) == 5
-            ) and (self.state_map == 2 or self.state_map == 3):
+            elif not (len(self.room) == 5 and len(self.shape) == 5) and (
+                self.state_map == 2 or self.state_map == 3
+            ):
                 self.state_map = 3
             else:
                 self.state_map = 4
 
             if self.state_map == 4:
-                if len(self.mission) == 5:
-                    self.state_grib == 1
-
-            if self.state_grib == 1:
-                if self.isFirst:
-                    if ranges[960] - 0.6 <= 0:
-                        self.state_grib = 2
-                else:
-                    if ranges[960] - 0.8 <= 0:
-                        self.state_grib = 2
-            elif self.state_grib == 2:
-                if self.ultra <= 5:
-                    self.state_grib = 3
-            elif self.state_grib == 3:
-                self.next_box = self.mission[0][1]
-                current = self.encode_value
-                if self.select_box < self.next_box:
-                    if (
-                        self.next_box - self.select_box
-                        < len(self.box_pos) - self.next_box + self.select_box
-                    ):
+                if self.state_grib == 1:
+                    if self.isFirst:
+                        if ranges[960] - 0.6 <= 0:
+                            self.state_grib = 2
+                    else:
+                        if ranges[960] - 0.8 <= 0:
+                            self.state_grib = 2
+                elif self.state_grib == 2:
+                    if self.ultra <= 5:
+                        self.state_grib = 3
+                elif self.state_grib == 3:
+                    self.next_box = self.mission[0][1]
+                    current = self.encode_value
+                    if self.select_box < self.next_box:
+                        if (
+                            self.next_box - self.select_box
+                            < len(self.box_pos) - self.next_box + self.select_box
+                        ):
+                            self.setpoint_adder = self.box_pos[
+                                self.next_box - self.select_box
+                            ]
+                        else:
+                            self.setpoint_adder = (
+                                -1
+                                * self.box_pos[
+                                    len(self.box_pos) - self.next_box + self.select_box
+                                ]
+                            )
+                    elif self.select_box == self.next_box:
+                        self.set_new_setpoint = False
                         self.setpoint_adder = self.box_pos[
                             self.next_box - self.select_box
                         ]
                     else:
-                        self.setpoint_adder = (
-                            -1
-                            * self.box_pos[
-                                len(self.box_pos) - self.next_box + self.select_box
+                        if (
+                            self.select_box - self.next_box
+                            > self.next_box - self.select_box + len(self.box_pos)
+                        ):
+                            self.setpoint_adder = self.box_pos[
+                                self.next_box - self.select_box + len(self.box_pos)
                             ]
-                        )
-                elif self.select_box == self.next_box:
-                    self.set_new_setpoint = False
-                    self.setpoint_adder = self.box_pos[self.next_box - self.select_box]
-                else:
-                    if (
-                        self.select_box - self.next_box
-                        > self.next_box - self.select_box + len(self.box_pos)
+                        else:
+                            self.setpoint_adder = (
+                                -1 * self.box_pos[self.select_box - self.next_box]
+                            )
+
+                    if self.select_box != self.next_box:
+                        self.set_new_setpoint = True
+                    if self.set_new_setpoint:
+                        self.setpoint = self.setpoint_adder + current
+
+                    self.select_box = self.next_box
+
+                    if not (
+                        self.setpoint - 80 < current and self.setpoint + 80 > current
                     ):
-                        self.setpoint_adder = self.box_pos[
-                            self.next_box - self.select_box + len(self.box_pos)
-                        ]
-                    else:
-                        self.setpoint_adder = (
-                            -1 * self.box_pos[self.select_box - self.next_box]
+                        self.integral = 0
+                        self.lastError = 0
+                        value = self.PID(
+                            1e-15,
+                            0,
+                            1000,
+                            self.setpoint,
+                            current,
                         )
+                        if abs(value) >= 100:
+                            value = 100.0 * value / abs(value)
 
-                if self.select_box != self.next_box:
-                    self.set_new_setpoint = True
-                if self.set_new_setpoint:
-                    self.setpoint = self.setpoint_adder + current
-
-                self.select_box = self.next_box
-
-                if not (self.setpoint - 80 < current and self.setpoint + 80 > current):
-                    self.integral = 0
-                    self.lastError = 0
-                    value = self.PID(
-                        1e-15,
-                        0,
-                        1000,
-                        self.setpoint,
-                        current,
-                    )
-                    if abs(value) >= 100:
-                        value = 100.0 * value / abs(value)
-
-                    self.sent_value_rotate = float(-1 * value)
+                        self.sent_value_rotate = float(-1 * value)
+                    else:
+                        self.sent_value_rotate = 0.0
+                        self.state_grib = 4
+                    self.lastTime = self.get_clock().now().to_msg().sec
+                elif self.state_grib == 4:
+                    if self.state_gribber == 3:
+                        self.state_grib == 5
+                elif self.state_grib == 5:
+                    if self.ultra >= 50:
+                        self.state_grib = 6
+                        self.mission = self.mission[1:]
                 else:
-                    self.sent_value_rotate = 0.0
-                    self.state_grib = 4
-                self.lastTime = self.get_clock().now().to_msg().sec
-            elif self.state_grib == 4:
-                if self.state_gribber == 3:
-                    self.state_grib == 5
-            elif self.state_grib == 5:
-                if self.ultra >= 50:
-                    self.state_grib = 6
-                    self.mission = self.mission[1:]
-            else:
-                self.state_grib = 0
+                    self.state_grib = 0
 
         # self.get_logger().info(f"{ranges[1400]} {ranges[1500]} {self.state_map}")
 

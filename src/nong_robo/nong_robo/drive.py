@@ -129,7 +129,7 @@ class DriveRobo(Node):
             elif self.state_map == 4:
                 if self.direct == "LEFT":
                     self.motor_direct = -1
-                elif self.direct == "RIGHT":
+                else:
                     self.motor_direct = 1
                 if self.state_grib == 1:
                     theta_motor = 0

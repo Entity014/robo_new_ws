@@ -314,7 +314,7 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
         Encoder_spin.write(0);
         genaral_msg.linear.z = state_running;
         heading_ = 0.0;
-      }
+            }
     }
 
     unsigned long now = millis();
